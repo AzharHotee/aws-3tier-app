@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: aws3tier-backend
+    ports:
+      - "5000:5000"   # change 5000 if your backend uses a different port
+    environment:
+      - NODE_ENV=development
+      # add any other env vars your backend needs, e.g. DB_URL later
+    # depends_on:
+    #   - db   # we'll use this when we add a database container
+
+  frontend:
+    build: ./frontend
+    container_name: aws3tier-frontend
+    ports:
+      - "3000:3000"   # change 3000 if your frontend runs on a different port
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - backend
+
