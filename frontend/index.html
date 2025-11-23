@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Citizen Feedback Service</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 15px;
+      }
+      h1,
+      h2 {
+        text-align: left;
+      }
+      form {
+        margin-bottom: 30px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+      input,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        box-sizing: border-box;
+      }
+      button {
+        margin-top: 15px;
+        padding: 10px 15px;
+        cursor: pointer;
+      }
+      .feedback-item {
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+      }
+      .feedback-meta {
+        font-size: 0.85em;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Citizen Feedback Service</h1>
+    <p>
+      Submit feedback or an enquiry about a public service. This is our simple
+      3-tier app demo.
+    </p>
+
+    <h2>Submit Feedback</h2>
+    <form id="feedback-form">
+      <label>
+        Name (optional)
+        <input type="text" id="name" />
+      </label>
+      <label>
+        Email (optional)
+        <input type="email" id="email" />
+      </label>
+      <label>
+        Message *
+        <textarea id="message" rows="4" required></textarea>
+      </label>
+      <button type="submit">Submit</button>
+      <p id="status" style="color: green"></p>
+    </form>
+
+    <h2>Submitted Feedback</h2>
+    <div id="feedback-list"></div>
+
+    <script>
+      const API_BASE = "http://localhost:4000/api";
+
+      async function fetchFeedback() {
+        try {
+          const res = await fetch(`${API_BASE}/feedback`);
+          const data = await res.json();
+          const container = document.getElementById("feedback-list");
+          container.innerHTML = "";
+
+          if (!data.length) {
+            container.innerHTML = "<p>No feedback yet.</p>";
+            return;
+          }
+
+          data
+            .slice()
+            .reverse()
+            .forEach((fb) => {
+              const div = document.createElement("div");
+              div.className = "feedback-item";
+              div.innerHTML = `
+              <div><strong>${fb.message}</strong></div>
+              <div class="feedback-meta">
+                By ${fb.name || "Anonymous"}
+                ${fb.email ? " (" + fb.email + ")" : ""}
+                on ${new Date(fb.createdAt).toLocaleString()}
+              </div>
+            `;
+              container.appendChild(div);
+            });
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      document
+        .getElementById("feedback-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const name = document.getElementById("name").value;
+          const email = document.getElementById("email").value;
+          const message = document.getElementById("message").value;
+          const statusEl = document.getElementById("status");
+
+          if (!message.trim()) {
+            statusEl.style.color = "red";
+            statusEl.textContent = "Message is required.";
+            return;
+          }
+
+          try {
+            const res = await fetch(`${API_BASE}/feedback`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, email, message }),
+            });
+
+            if (!res.ok) {
+              throw new Error("Failed to submit");
+            }
+
+            statusEl.style.color = "green";
+            statusEl.textContent = "Feedback submitted!";
+            document.getElementById("message").value = "";
+            fetchFeedback();
+          } catch (err) {
+            console.error(err);
+            statusEl.style.color = "red";
+            statusEl.textContent =
+              "There was an error submitting your feedback.";
+          }
+        });
+
+      // Initial load
+      fetchFeedback();
+    </script>
+  </body>
+</html>
+
